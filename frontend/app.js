@@ -1,134 +1,224 @@
-const API_BASE_URL = 'http://localhost:5000/api';
-let currentDeleteId = null;
-let currentModal = null;
-let isEditMode = false;
+const API_URL = 'http://127.0.0.1:5000/api/opportunities';
+
+// State
+let opportunities = [];
+
+// DOM Elements
+const opportunitiesContainer = document.getElementById('opportunitiesContainer');
+const loadingIndicator = document.getElementById('loadingIndicator');
+const opportunityForm = document.getElementById('opportunityForm');
+const btnSave = document.getElementById('btnSave');
+const btnConfirmDelete = document.getElementById('btnConfirmDelete');
+const btnCreateNew = document.getElementById('btnCreateNew');
+
+// Modals
+let opportunityModal;
+let detailsModal;
+let deleteModal;
+
+// Toast
+let toastElement;
+let toastInstance;
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Modals
+    opportunityModal = new bootstrap.Modal(document.getElementById('opportunityModal'));
+    detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
+    deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    
+    // Initialize Toast
+    toastElement = document.getElementById('liveToast');
+    toastInstance = bootstrap.Toast.getOrCreateInstance(toastElement);
+
+    // Event Listeners
+    btnCreateNew.addEventListener('click', openCreateModal);
+    btnSave.addEventListener('click', saveOpportunity);
+    btnConfirmDelete.addEventListener('click', deleteOpportunity);
+
+    // Initial Fetch
     fetchOpportunities();
-    
-    // Initialize Modal
-    currentModal = new bootstrap.Modal(document.getElementById('opportunityModal'));
-    
-    // Setup event listeners
-    document.getElementById('btnCreateNew').addEventListener('click', openCreateModal);
-    document.getElementById('btnSave').addEventListener('click', saveOpportunity);
-    document.getElementById('btnConfirmDelete').addEventListener('click', confirmDelete);
 });
+
+// Toast functionality
+function showToast(message, type = 'success') {
+    const toastBody = document.getElementById('toastMessage');
+    toastBody.textContent = message;
+    
+    toastElement.className = `toast align-items-center border-0 text-bg-${type === 'success' ? 'dark' : 'danger'}`;
+    toastInstance.show();
+}
 
 // Fetch all opportunities
 async function fetchOpportunities() {
-    const container = document.getElementById('opportunitiesContainer');
-    
     try {
-        const response = await fetch(`${API_BASE_URL}/opportunities`);
-        if (!response.ok) throw new Error('Failed to fetch data');
+        opportunitiesContainer.innerHTML = '';
+        opportunitiesContainer.appendChild(loadingIndicator);
+        loadingIndicator.style.display = 'block';
+
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error('Network response was not ok');
         
-        const data = await response.json();
-        renderOpportunities(data);
+        opportunities = await response.json();
+        renderOpportunities();
     } catch (error) {
-        console.error('Error:', error);
-        container.innerHTML = `
-            <div class="alert alert-danger" role="alert">
-                Failed to load opportunities. Is the backend running?
-            </div>
-        `;
+        console.error('Error fetching data:', error);
+        showToast('Failed to load opportunities', 'error');
+        renderEmptyState('Failed to load data. Ensure the backend is running.');
+    } finally {
+        loadingIndicator.style.display = 'none';
     }
 }
 
-// Render cards
-function renderOpportunities(opportunities) {
-    const container = document.getElementById('opportunitiesContainer');
-    container.innerHTML = '';
-    
+// Render the grid
+function renderOpportunities() {
+    opportunitiesContainer.innerHTML = '';
+
     if (opportunities.length === 0) {
-        container.innerHTML = '<div class="col-12 text-center"><p class="text-muted">No opportunities found.</p></div>';
+        renderEmptyState('No research opportunities found. Create one to get started.');
         return;
     }
-    
+
     opportunities.forEach(opp => {
-        const statusClass = opp.status === 'Open' ? 'bg-success' : 'bg-secondary';
-        const date = new Date(opp.application_deadline).toLocaleDateString();
-        // Convert the object to a JSON string and escape quotes for HTML attribute
-        const oppJson = JSON.stringify(opp).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
-        
         const col = document.createElement('div');
-        col.className = 'col-md-6 col-lg-4 mb-4';
+        col.className = 'col-12 col-md-6 col-lg-4';
+        
+        const badgeClass = opp.status === 'Open' ? 'badge-open' : 'badge-closed';
+        const formattedDate = new Date(opp.application_deadline).toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric'
+        });
+
+        // Use safe textContent inside templates by creating elements or parsing carefully
+        // Creating DOM structure manually is safer but verbose. We'll use innerHTML with escaped text helper.
+        const escapeHTML = (str) => {
+            if(!str) return '';
+            return str.toString().replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        };
+
         col.innerHTML = `
-            <div class="card shadow-sm h-100 position-relative">
-                <span class="badge ${statusClass} status-badge">${opp.status}</span>
+            <div class="card position-relative h-100">
+                <span class="status-badge ${badgeClass}">${escapeHTML(opp.status)}</span>
                 <div class="card-body d-flex flex-column">
-                    <h5 class="card-title pr-4">${opp.title}</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">${opp.department}</h6>
-                    <p class="card-text text-truncate" title="${opp.description}">${opp.description}</p>
-                    <div class="mt-auto">
-                        <p class="mb-1"><small><strong>Faculty:</strong> ${opp.faculty_name}</small></p>
-                        <p class="mb-3"><small><strong>Deadline:</strong> ${date}</small></p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <button class="btn btn-sm btn-outline-primary" onclick="viewDetails(${opp.id})">Details</button>
-                            <div class="btn-group">
-                                <button class="btn btn-sm btn-outline-secondary" onclick="openEditModal(${opp.id})">Edit</button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="openDeleteModal(${opp.id})">Delete</button>
-                            </div>
+                    <div class="mb-3">
+                        <div class="text-uppercase text-muted" style="font-size: 0.75rem; letter-spacing: 0.05em; font-weight: 600;">
+                            ${escapeHTML(opp.department)} • ${escapeHTML(opp.area)}
+                        </div>
+                        <h5 class="card-title mt-2 mb-3">${escapeHTML(opp.title)}</h5>
+                        <p class="card-text flex-grow-1">${escapeHTML(opp.description.substring(0, 100))}${opp.description.length > 100 ? '...' : ''}</p>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top" style="border-color: var(--border-color) !important;">
+                        <small class="text-muted fw-medium"><i class="ph ph-calendar-blank me-1"></i>${formattedDate}</small>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary rounded-start-pill" onclick="viewDetails(${opp.id})">Details</button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="openEditModal(${opp.id})">Edit</button>
+                            <button class="btn btn-sm btn-outline-primary rounded-end-pill" onclick="confirmDelete(${opp.id})">Delete</button>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-        container.appendChild(col);
+        opportunitiesContainer.appendChild(col);
     });
 }
 
-// View details
+function renderEmptyState(message) {
+    opportunitiesContainer.innerHTML = `
+        <div class="col-12">
+            <div class="empty-state">
+                <i class="ph ph-magnifying-glass fs-1 text-muted mb-3"></i>
+                <h3 class="empty-state-title">No Opportunities</h3>
+                <p class="empty-state-text">${message}</p>
+            </div>
+        </div>
+    `;
+}
+
+// View Details
 async function viewDetails(id) {
     try {
-        const response = await fetch(`${API_BASE_URL}/opportunities/${id}`);
-        if (!response.ok) throw new Error('Failed to fetch details');
-        
+        const response = await fetch(`${API_URL}/${id}`);
+        if (!response.ok) throw new Error('Not found');
         const opp = await response.json();
         
-        const detailsHtml = `
-            <h4>${opp.title}</h4>
-            <div class="mb-3">
-                <span class="badge ${opp.status === 'Open' ? 'bg-success' : 'bg-secondary'}">${opp.status}</span>
+        const body = document.getElementById('detailsModalBody');
+        const escapeHTML = (str) => {
+            if(!str) return '';
+            return str.toString().replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        };
+        
+        const badgeClass = opp.status === 'Open' ? 'badge-open' : 'badge-closed';
+        const formattedDate = new Date(opp.application_deadline).toLocaleDateString('en-US', {
+            month: 'long', day: 'numeric', year: 'numeric'
+        });
+
+        body.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                    <div class="text-uppercase text-muted mb-1" style="font-size: 0.8rem; letter-spacing: 0.05em; font-weight: 600;">
+                        ${escapeHTML(opp.department)} • ${escapeHTML(opp.area)}
+                    </div>
+                    <h4 class="fw-bold mb-0">${escapeHTML(opp.title)}</h4>
+                </div>
+                <span class="status-badge position-static ms-3 ${badgeClass}">${escapeHTML(opp.status)}</span>
             </div>
-            <p><strong>Department:</strong> ${opp.department}</p>
-            <p><strong>Research Area:</strong> ${opp.area}</p>
-            <p><strong>Faculty:</strong> ${opp.faculty_name}</p>
-            <hr>
-            <h5>Description</h5>
-            <p>${opp.description}</p>
-            <hr>
-            <h5>Requirements</h5>
-            <p><strong>Skills:</strong> ${opp.required_skills}</p>
-            <p><strong>Positions:</strong> ${opp.available_positions}</p>
-            <p><strong>Deadline:</strong> ${new Date(opp.application_deadline).toLocaleDateString()}</p>
+            
+            <p class="mb-4" style="line-height: 1.7; color: var(--text-muted);">${escapeHTML(opp.description)}</p>
+            
+            <div class="details-grid p-4 rounded bg-light border">
+                <div class="detail-item">
+                    <span class="detail-label">Faculty Member</span>
+                    <span class="detail-value">${escapeHTML(opp.faculty_name)}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Required Skills</span>
+                    <span class="detail-value">${escapeHTML(opp.required_skills)}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Available Positions</span>
+                    <span class="detail-value">${escapeHTML(opp.available_positions)}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Application Deadline</span>
+                    <span class="detail-value">${formattedDate}</span>
+                </div>
+            </div>
         `;
         
-        document.getElementById('detailsModalBody').innerHTML = detailsHtml;
-        const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
-        modal.show();
+        detailsModal.show();
     } catch (error) {
-        console.error('Error fetching details:', error);
-        showAlert('Failed to load opportunity details.', 'danger');
+        showToast('Failed to load details', 'error');
     }
 }
 
-// Modal Management
+// Open Create Modal
 function openCreateModal() {
-    isEditMode = false;
-    document.getElementById('opportunityModalLabel').textContent = 'Create Opportunity';
     document.getElementById('opportunityForm').reset();
     document.getElementById('oppId').value = '';
     document.getElementById('statusGroup').style.display = 'none';
+    document.getElementById('opportunityModalLabel').textContent = 'Create New Opportunity';
 }
 
+// Open Edit Modal
 async function openEditModal(id) {
-    isEditMode = true;
-    document.getElementById('opportunityModalLabel').textContent = 'Edit Opportunity';
-    
     try {
-        const response = await fetch(`${API_BASE_URL}/opportunities/${id}`);
-        if (!response.ok) throw new Error('Failed to fetch details');
+        const response = await fetch(`${API_URL}/${id}`);
+        if (!response.ok) throw new Error('Not found');
         const opp = await response.json();
         
         document.getElementById('oppId').value = opp.id;
@@ -140,126 +230,106 @@ async function openEditModal(id) {
         document.getElementById('required_skills').value = opp.required_skills;
         document.getElementById('available_positions').value = opp.available_positions;
         
-        // Format date for input field (YYYY-MM-DD)
+        // Format date to YYYY-MM-DD for input
         const dateObj = new Date(opp.application_deadline);
-        document.getElementById('application_deadline').value = dateObj.toISOString().split('T')[0];
+        const yyyy = dateObj.getFullYear();
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        document.getElementById('application_deadline').value = `${yyyy}-${mm}-${dd}`;
         
         document.getElementById('statusGroup').style.display = 'block';
         document.getElementById('status').value = opp.status;
         
-        currentModal.show();
+        document.getElementById('opportunityModalLabel').textContent = 'Edit Opportunity';
+        opportunityModal.show();
     } catch (error) {
-        console.error('Error fetching details for edit:', error);
-        showAlert('Failed to load opportunity details.', 'danger');
+        showToast('Failed to load opportunity for editing', 'error');
     }
 }
 
-function openDeleteModal(id) {
-    currentDeleteId = id;
-    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-    deleteModal.show();
-}
-
-// CRUD Operations
+// Save (Create or Update)
 async function saveOpportunity() {
     const form = document.getElementById('opportunityForm');
-    
-    // Simple HTML5 validation check
     if (!form.checkValidity()) {
         form.reportValidity();
         return;
     }
-    
+
     const id = document.getElementById('oppId').value;
+    const isEdit = !!id;
     
-    const payload = {
-        title: document.getElementById('title').value.trim(),
-        description: document.getElementById('description').value.trim(),
-        area: document.getElementById('area').value.trim(),
-        faculty_name: document.getElementById('faculty_name').value.trim(),
-        department: document.getElementById('department').value.trim(),
-        required_skills: document.getElementById('required_skills').value.trim(),
+    const data = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        area: document.getElementById('area').value,
+        faculty_name: document.getElementById('faculty_name').value,
+        department: document.getElementById('department').value,
+        required_skills: document.getElementById('required_skills').value,
         available_positions: parseInt(document.getElementById('available_positions').value),
-        application_deadline: document.getElementById('application_deadline').value
+        application_deadline: document.getElementById('application_deadline').value,
     };
 
-    if (isEditMode) {
-        payload.status = document.getElementById('status').value;
+    if (isEdit) {
+        data.status = document.getElementById('status').value;
     }
 
     try {
-        const url = isEditMode ? `${API_BASE_URL}/opportunities/${id}` : `${API_BASE_URL}/opportunities`;
-        const method = isEditMode ? 'PUT' : 'POST';
-        
+        btnSave.disabled = true;
+        btnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+        const url = isEdit ? `${API_URL}/${id}` : API_URL;
+        const method = isEdit ? 'PUT' : 'POST';
+
         const response = await fetch(url, {
             method: method,
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(data)
         });
-        
-        const data = await response.json();
-        
+
         if (!response.ok) {
-            throw new Error(data.message || 'Failed to save');
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to save');
         }
-        
-        currentModal.hide();
-        showAlert(`Opportunity successfully ${isEditMode ? 'updated' : 'created'}.`, 'success');
+
+        showToast(isEdit ? 'Opportunity updated successfully' : 'Opportunity created successfully');
+        opportunityModal.hide();
         fetchOpportunities();
-        
     } catch (error) {
-        console.error('Save error:', error);
-        showAlert(error.message, 'danger');
+        showToast(error.message, 'error');
+    } finally {
+        btnSave.disabled = false;
+        btnSave.textContent = isEdit ? 'Save Changes' : 'Save Opportunity';
     }
 }
 
-async function confirmDelete() {
-    if (!currentDeleteId) return;
-    
+// Confirm Delete
+function confirmDelete(id) {
+    document.getElementById('deleteId').value = id;
+    deleteModal.show();
+}
+
+// Execute Delete
+async function deleteOpportunity() {
+    const id = document.getElementById('deleteId').value;
     try {
-        const response = await fetch(`${API_BASE_URL}/opportunities/${currentDeleteId}`, {
+        btnConfirmDelete.disabled = true;
+        btnConfirmDelete.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Deleting...';
+
+        const response = await fetch(`${API_URL}/${id}`, {
             method: 'DELETE'
         });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.message || 'Failed to delete');
-        }
-        
-        const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
-        deleteModal.hide();
-        
-        showAlert('Opportunity deleted successfully.', 'success');
-        fetchOpportunities();
-        
-    } catch (error) {
-        console.error('Delete error:', error);
-        showAlert(error.message, 'danger');
-    } finally {
-        currentDeleteId = null;
-    }
-}
 
-// Utility for alerts
-function showAlert(message, type = 'success') {
-    const alertHtml = `
-        <div class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    `;
-    const container = document.getElementById('alertContainer');
-    container.innerHTML = alertHtml;
-    
-    // Auto-dismiss after 5 seconds
-    setTimeout(() => {
-        const alertNode = container.querySelector('.alert');
-        if (alertNode) {
-            const alert = new bootstrap.Alert(alertNode);
-            alert.close();
-        }
-    }, 5000);
+        if (!response.ok) throw new Error('Failed to delete');
+
+        showToast('Opportunity deleted successfully');
+        deleteModal.hide();
+        fetchOpportunities();
+    } catch (error) {
+        showToast('Failed to delete opportunity', 'error');
+    } finally {
+        btnConfirmDelete.disabled = false;
+        btnConfirmDelete.textContent = 'Delete';
+    }
 }

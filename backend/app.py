@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+from datetime import datetime
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
@@ -68,7 +69,17 @@ def create_opportunity():
     for field in required_fields:
         if field not in data or not str(data[field]).strip():
             return jsonify({"error": "Bad Request", "message": f"Missing required field: {field}"}), 400
-            
+    try:
+        if int(data['available_positions']) <= 0:
+            return jsonify({"error": "Bad Request", "message": "Available positions must be positive"}), 400
+    except ValueError:
+        return jsonify({"error": "Bad Request", "message": "Available positions must be an integer"}), 400
+
+    try:
+        datetime.strptime(str(data['application_deadline']), "%Y-%m-%d")
+    except ValueError:
+        return jsonify({"error": "Bad Request", "message": "Date must be YYYY-MM-DD format"}), 400
+        
     conn = get_db_connection()
     if not conn:
         return jsonify({"error": "Database connection failed"}), 500
@@ -110,6 +121,16 @@ def update_opportunity(id):
             
     if data['status'] not in ['Open', 'Closed']:
         return jsonify({"error": "Bad Request", "message": "Status must be 'Open' or 'Closed'"}), 400
+    try:
+        if int(data['available_positions']) <= 0:
+            return jsonify({"error": "Bad Request", "message": "Available positions must be positive"}), 400
+    except ValueError:
+        return jsonify({"error": "Bad Request", "message": "Available positions must be an integer"}), 400
+
+    try:
+        datetime.strptime(str(data['application_deadline']), "%Y-%m-%d")
+    except ValueError:
+        return jsonify({"error": "Bad Request", "message": "Date must be YYYY-MM-DD format"}), 400
         
     conn = get_db_connection()
     if not conn:

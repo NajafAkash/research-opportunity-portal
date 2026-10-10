@@ -3,40 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Research Opportunity Portal</title>
+    <title>Research Opportunities</title>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="styles.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="navbar-brand" href="#">Research Portal</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <button class="btn btn-primary" id="btnCreateNew" data-bs-toggle="modal" data-bs-target="#opportunityModal">Create New Opportunity</button>
-                    </li>
-                </ul>
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+                <i class="ph ph-flask fs-4"></i>
+                Research Portal
+            </a>
+            <div class="ms-auto">
+                <button class="btn btn-primary d-flex align-items-center gap-2" id="btnCreateNew" data-bs-toggle="modal" data-bs-target="#opportunityModal">
+                    <i class="ph ph-plus-circle fs-5"></i>
+                    New Opportunity
+                </button>
             </div>
         </div>
     </nav>
 
-    <header class="bg-light py-5 mb-4">
-        <div class="container text-center">
-            <h1 class="display-4">Research Opportunities</h1>
-            <p class="lead">Find and manage academic research positions</p>
+    <header class="hero text-center">
+        <div class="container">
+            <h1 class="display-4 mb-3">Academic Research Positions</h1>
+            <p class="lead">Discover open research roles across departments, collaborate with faculty, and advance your academic career.</p>
         </div>
     </header>
 
     <main class="container mb-5">
         <div id="alertContainer"></div>
-        <div class="row" id="opportunitiesContainer">
+        <div class="row g-4" id="opportunitiesContainer">
             <!-- Loading indicator -->
-            <div class="text-center" id="loadingIndicator">
-                <div class="spinner-border" role="status">
+            <div class="col-12 text-center py-5" id="loadingIndicator">
+                <div class="spinner-border text-secondary" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
             </div>
@@ -45,77 +46,90 @@
 
     <!-- Details Modal -->
     <div class="modal fade" id="detailsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="detailsModalLabel">Opportunity Details</h5>
+                    <h5 class="modal-title fs-4 fw-bold" id="detailsModalLabel">Opportunity Details</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="detailsModalBody">
-                    <!-- Details will be loaded here -->
+                    <!-- Loaded dynamically -->
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Create/Edit Modal (for Step 7, placeholder for now) -->
+    <!-- Create/Edit Modal -->
     <div class="modal fade" id="opportunityModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="opportunityModalLabel">Create Opportunity</h5>
+                    <h5 class="modal-title fs-4 fw-bold" id="opportunityModalLabel">Create Opportunity</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="opportunityForm">
                         <input type="hidden" id="oppId">
-                        <div class="mb-3">
-                            <label for="title" class="form-label">Title</label>
-                            <input type="text" class="form-control" id="title" required>
+                        
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-12">
+                                <label for="title" class="form-label">Research Title</label>
+                                <input type="text" class="form-control" id="title" required placeholder="e.g. Distributed Systems Optimization">
+                            </div>
                         </div>
+
                         <div class="mb-3">
                             <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" rows="3" required></textarea>
+                            <textarea class="form-control" id="description" rows="4" required placeholder="Briefly describe the research goals..."></textarea>
                         </div>
-                        <div class="mb-3">
-                            <label for="area" class="form-label">Research Area</label>
-                            <input type="text" class="form-control" id="area" required>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="area" class="form-label">Research Area</label>
+                                <input type="text" class="form-control" id="area" required placeholder="e.g. Computer Networks">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="department" class="form-label">Department</label>
+                                <input type="text" class="form-control" id="department" required placeholder="e.g. Computer Science">
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="faculty_name" class="form-label">Faculty Name</label>
-                            <input type="text" class="form-control" id="faculty_name" required>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="faculty_name" class="form-label">Faculty Member</label>
+                                <input type="text" class="form-control" id="faculty_name" required placeholder="e.g. Dr. Jane Smith">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="required_skills" class="form-label">Required Skills</label>
+                                <input type="text" class="form-control" id="required_skills" required placeholder="e.g. Python, C++, Docker">
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="department" class="form-label">Department</label>
-                            <input type="text" class="form-control" id="department" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="required_skills" class="form-label">Required Skills</label>
-                            <input type="text" class="form-control" id="required_skills" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="available_positions" class="form-label">Available Positions</label>
-                            <input type="number" class="form-control" id="available_positions" required min="1">
-                        </div>
-                        <div class="mb-3">
-                            <label for="application_deadline" class="form-label">Application Deadline</label>
-                            <input type="date" class="form-control" id="application_deadline" required>
-                        </div>
-                        <div class="mb-3" id="statusGroup" style="display: none;">
-                            <label for="status" class="form-label">Status</label>
-                            <select class="form-select" id="status">
-                                <option value="Open">Open</option>
-                                <option value="Closed">Closed</option>
-                            </select>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label for="available_positions" class="form-label">Positions</label>
+                                <input type="number" class="form-control" id="available_positions" required min="1" placeholder="1">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="application_deadline" class="form-label">Deadline</label>
+                                <input type="date" class="form-control" id="application_deadline" required>
+                            </div>
+                            <div class="col-md-4" id="statusGroup" style="display: none;">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status">
+                                    <option value="Open">Open</option>
+                                    <option value="Closed">Closed</option>
+                                </select>
+                            </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="btnSave">Save</button>
+                    <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary px-4" id="btnSave">Save Opportunity</button>
                 </div>
             </div>
         </div>
@@ -123,20 +137,32 @@
 
     <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="deleteModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Confirm Delete</h5>
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fs-4 fw-bold">Delete Opportunity</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    Are you sure you want to delete this opportunity?
+                    <p class="mb-0 text-muted">Are you sure you want to delete this opportunity? This action cannot be undone.</p>
                     <input type="hidden" id="deleteId">
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-danger" id="btnConfirmDelete">Delete</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toasts -->
+    <div class="toast-container">
+        <div id="liveToast" class="toast align-items-center text-bg-dark border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toastMessage">
+                    Action completed successfully.
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>
     </div>

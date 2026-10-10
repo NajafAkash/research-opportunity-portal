@@ -1,22 +1,253 @@
-body {
-    background-color: #f8f9fa;
+/* Tasteskill: Minimalist / Premium Frontend Overrides */
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+
+:root {
+    --bs-body-font-family: 'Satoshi', sans-serif;
+    --bs-body-bg: #fafafa;
+    --bs-body-color: #18181b; /* zinc-900 */
+    --bs-primary: #10b981; /* emerald-500 */
+    --bs-primary-rgb: 16, 185, 129;
+    --bs-dark: #18181b;
+    --bs-light: #ffffff;
+    --card-bg: #ffffff;
+    --border-color: #e4e4e7; /* zinc-200 */
+    --text-muted: #71717a; /* zinc-500 */
 }
+
+body {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    font-family: var(--bs-body-font-family);
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--bs-dark);
+}
+
+.display-4 {
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+}
+
+.lead {
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 1.125rem;
+    max-width: 65ch;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Nav */
+.navbar {
+    background-color: transparent !important;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    backdrop-filter: blur(12px);
+    background: rgba(250, 250, 250, 0.8) !important;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.navbar-brand {
+    color: var(--bs-dark) !important;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+/* Hero Section */
+header.hero {
+    background-color: transparent !important;
+    padding: 6rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Buttons */
+.btn {
+    font-weight: 500;
+    padding: 0.625rem 1.25rem;
+    border-radius: 9999px; /* Pill */
+    letter-spacing: -0.01em;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-dark);
+    color: #fff;
+}
+.btn-primary:hover {
+    background-color: #27272a;
+    border-color: #27272a;
+    transform: translateY(-1px);
+}
+
+.btn-outline-primary {
+    color: var(--bs-dark);
+    border-color: var(--border-color);
+}
+.btn-outline-primary:hover {
+    background-color: var(--border-color);
+    color: var(--bs-dark);
+    border-color: var(--border-color);
+}
+
+.btn-danger {
+    background-color: #ef4444;
+    border-color: #ef4444;
+}
+
+/* Cards (Bento style) */
 .card {
-    transition: transform 0.2s;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: none;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
     height: 100%;
 }
 .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -10px rgba(0,0,0,0.08);
 }
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.card-text {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.card-body {
+    padding: 2rem;
+}
+
 .status-badge {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 1.5rem;
+    right: 1.5rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
+
+.badge-open {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.badge-closed {
+    background-color: rgba(113, 113, 122, 0.1);
+    color: #52525b;
+    border: 1px solid rgba(113, 113, 122, 0.2);
+}
+
+/* Forms & Modals */
+.modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+    padding: 1.5rem 2rem;
+}
+.modal-body {
+    padding: 2rem;
+}
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+    padding: 1.5rem 2rem;
+}
+.form-label {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--bs-dark);
+}
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--bs-dark);
+    box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.1);
+}
+
+/* Empty State */
+.empty-state {
+    padding: 5rem 2rem;
+    text-align: center;
+    border: 1px dashed var(--border-color);
+    border-radius: 16px;
+    background: transparent;
+}
+.empty-state-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+.empty-state-text {
+    color: var(--text-muted);
+}
+
+/* Toasts */
 .toast-container {
     position: fixed;
-    top: 20px;
-    right: 20px;
+    bottom: 24px;
+    right: 24px;
+    top: auto;
     z-index: 1055;
+}
+.toast {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Details grid */
+.details-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+@media (min-width: 768px) {
+    .details-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.detail-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.detail-value {
+    font-size: 1rem;
+    color: var(--bs-dark);
+    font-weight: 500;
 }
