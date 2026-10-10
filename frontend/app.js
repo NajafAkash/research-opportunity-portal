@@ -1,7 +1,18 @@
 const API_BASE_URL = 'http://localhost:5000/api';
+let currentDeleteId = null;
+let currentModal = null;
+let isEditMode = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchOpportunities();
+    
+    // Initialize Modal
+    currentModal = new bootstrap.Modal(document.getElementById('opportunityModal'));
+    
+    // Setup event listeners
+    document.getElementById('btnCreateNew').addEventListener('click', openCreateModal);
+    document.getElementById('btnSave').addEventListener('click', saveOpportunity);
+    document.getElementById('btnConfirmDelete').addEventListener('click', confirmDelete);
 });
 
 // Fetch all opportunities
@@ -37,6 +48,8 @@ function renderOpportunities(opportunities) {
     opportunities.forEach(opp => {
         const statusClass = opp.status === 'Open' ? 'bg-success' : 'bg-secondary';
         const date = new Date(opp.application_deadline).toLocaleDateString();
+        // Convert the object to a JSON string and escape quotes for HTML attribute
+        const oppJson = JSON.stringify(opp).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
         
         const col = document.createElement('div');
         col.className = 'col-md-6 col-lg-4 mb-4';
@@ -46,12 +59,16 @@ function renderOpportunities(opportunities) {
                 <div class="card-body d-flex flex-column">
                     <h5 class="card-title pr-4">${opp.title}</h5>
                     <h6 class="card-subtitle mb-2 text-muted">${opp.department}</h6>
-                    <p class="card-text text-truncate">${opp.description}</p>
+                    <p class="card-text text-truncate" title="${opp.description}">${opp.description}</p>
                     <div class="mt-auto">
                         <p class="mb-1"><small><strong>Faculty:</strong> ${opp.faculty_name}</small></p>
                         <p class="mb-3"><small><strong>Deadline:</strong> ${date}</small></p>
-                        <div class="d-flex justify-content-between">
-                            <button class="btn btn-sm btn-outline-primary" onclick="viewDetails(${opp.id})">View Details</button>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewDetails(${opp.id})">Details</button>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="openEditModal(${opp.id})">Edit</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="openDeleteModal(${opp.id})">Delete</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -96,10 +113,140 @@ async function viewDetails(id) {
     }
 }
 
-// Utility for alerts (will be useful in Step 7)
+// Modal Management
+function openCreateModal() {
+    isEditMode = false;
+    document.getElementById('opportunityModalLabel').textContent = 'Create Opportunity';
+    document.getElementById('opportunityForm').reset();
+    document.getElementById('oppId').value = '';
+    document.getElementById('statusGroup').style.display = 'none';
+}
+
+async function openEditModal(id) {
+    isEditMode = true;
+    document.getElementById('opportunityModalLabel').textContent = 'Edit Opportunity';
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/opportunities/${id}`);
+        if (!response.ok) throw new Error('Failed to fetch details');
+        const opp = await response.json();
+        
+        document.getElementById('oppId').value = opp.id;
+        document.getElementById('title').value = opp.title;
+        document.getElementById('description').value = opp.description;
+        document.getElementById('area').value = opp.area;
+        document.getElementById('faculty_name').value = opp.faculty_name;
+        document.getElementById('department').value = opp.department;
+        document.getElementById('required_skills').value = opp.required_skills;
+        document.getElementById('available_positions').value = opp.available_positions;
+        
+        // Format date for input field (YYYY-MM-DD)
+        const dateObj = new Date(opp.application_deadline);
+        document.getElementById('application_deadline').value = dateObj.toISOString().split('T')[0];
+        
+        document.getElementById('statusGroup').style.display = 'block';
+        document.getElementById('status').value = opp.status;
+        
+        currentModal.show();
+    } catch (error) {
+        console.error('Error fetching details for edit:', error);
+        showAlert('Failed to load opportunity details.', 'danger');
+    }
+}
+
+function openDeleteModal(id) {
+    currentDeleteId = id;
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+
+// CRUD Operations
+async function saveOpportunity() {
+    const form = document.getElementById('opportunityForm');
+    
+    // Simple HTML5 validation check
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const id = document.getElementById('oppId').value;
+    
+    const payload = {
+        title: document.getElementById('title').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        area: document.getElementById('area').value.trim(),
+        faculty_name: document.getElementById('faculty_name').value.trim(),
+        department: document.getElementById('department').value.trim(),
+        required_skills: document.getElementById('required_skills').value.trim(),
+        available_positions: parseInt(document.getElementById('available_positions').value),
+        application_deadline: document.getElementById('application_deadline').value
+    };
+
+    if (isEditMode) {
+        payload.status = document.getElementById('status').value;
+    }
+
+    try {
+        const url = isEditMode ? `${API_BASE_URL}/opportunities/${id}` : `${API_BASE_URL}/opportunities`;
+        const method = isEditMode ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to save');
+        }
+        
+        currentModal.hide();
+        showAlert(`Opportunity successfully ${isEditMode ? 'updated' : 'created'}.`, 'success');
+        fetchOpportunities();
+        
+    } catch (error) {
+        console.error('Save error:', error);
+        showAlert(error.message, 'danger');
+    }
+}
+
+async function confirmDelete() {
+    if (!currentDeleteId) return;
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/opportunities/${currentDeleteId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to delete');
+        }
+        
+        const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+        deleteModal.hide();
+        
+        showAlert('Opportunity deleted successfully.', 'success');
+        fetchOpportunities();
+        
+    } catch (error) {
+        console.error('Delete error:', error);
+        showAlert(error.message, 'danger');
+    } finally {
+        currentDeleteId = null;
+    }
+}
+
+// Utility for alerts
 function showAlert(message, type = 'success') {
     const alertHtml = `
-        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        <div class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
