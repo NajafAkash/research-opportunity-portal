@@ -53,5 +53,22 @@ A full-stack web application for managing and displaying research opportunities 
    ```
    Then navigate to `http://localhost:8000` (or whichever port is provided).
 
+## API Testing (Postman)
+An exported Postman collection is included in the repository at:
+`tests/postman_collection.json` (also available as `tests/Research_Opportunity_Portal.postman_collection.json`).
+
+The collection includes all required test cases:
+1. Creating opportunities (POST)
+2. Retrieving all opportunities (GET)
+3. Retrieving single opportunity by ID (GET)
+4. Updating an opportunity (PUT)
+5. Changing status from Open to Closed (PUT)
+6. Deleting an opportunity (DELETE)
+7. Requesting deleted ID (verifies 404 Not Found)
+8. Sending invalid/missing data (verifies 400 Bad Request)
+
+Import the file into Postman or Bruno and execute the requests against `http://localhost:5000`.
+
 ## GitHub Repository
-[GitHub Repository Link - Placeholder](https://github.com/placeholder-repo)
+[GitHub Repository](https://github.com/NajafAkash/research-opportunity-portal)
+
