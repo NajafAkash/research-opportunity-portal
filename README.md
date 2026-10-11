@@ -69,6 +69,11 @@ The collection includes all required test cases:
 
 Import the file into Postman or Bruno and execute the requests against `http://localhost:5000`.
 
+## Demonstration Video
+A 1-minute demonstration video is included in the project:
+- `demo_video.mp4`
+
 ## GitHub Repository
 [GitHub Repository](https://github.com/NajafAkash/research-opportunity-portal)
+
 
